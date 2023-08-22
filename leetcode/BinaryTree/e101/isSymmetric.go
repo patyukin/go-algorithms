@@ -17,7 +17,7 @@ func isSymmetric(root *TreeNode) bool {
 		return true
 	}
 
-	if root.Left == nil && root.Right != nil || root.Left != nil && root.Right == nil {
+	if root.Left == nil || root.Right == nil {
 		return false
 	}
 
@@ -37,27 +37,22 @@ func isSymmetric(root *TreeNode) bool {
 			left = left[1:]
 			right = right[1:]
 
+			if leftNode == nil && rightNode == nil {
+				continue
+			}
+
+			if leftNode == nil || rightNode == nil {
+				return false
+			}
+
 			if leftNode.Val != rightNode.Val {
 				return false
 			}
 
-			if leftNode.Left == nil && rightNode.Right != nil || leftNode.Left != nil && rightNode.Right == nil {
-				return false
-			}
-
-			if leftNode.Right == nil && rightNode.Left != nil || leftNode.Right != nil && rightNode.Left == nil {
-				return false
-			}
-
-			if leftNode.Left != nil && rightNode.Right != nil {
-				left = append(left, leftNode.Left)
-				right = append(right, rightNode.Right)
-			}
-
-			if leftNode.Right != nil && rightNode.Left != nil {
-				left = append(left, leftNode.Right)
-				right = append(right, rightNode.Left)
-			}
+			left = append(left, leftNode.Left)
+			right = append(right, rightNode.Right)
+			left = append(left, leftNode.Right)
+			right = append(right, rightNode.Left)
 		}
 	}
 
