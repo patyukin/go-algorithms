@@ -16,12 +16,12 @@ func levelOrder(root *TreeNode) [][]int {
 
 	for len(queue) > 0 {
 		levelSize := len(queue)
-		level := make([]int, 0)
+		var levelValues []int
 
 		for i := 0; i < levelSize; i++ {
 			node := queue[0]
 			queue = queue[1:]
-			level = append(level, node.Val)
+			levelValues = append(levelValues, node.Val)
 
 			if node.Left != nil {
 				queue = append(queue, node.Left)
@@ -32,8 +32,30 @@ func levelOrder(root *TreeNode) [][]int {
 			}
 		}
 
-		levels = append(levels, level)
+		levels = append(levels, levelValues)
 	}
 
 	return levels
+}
+
+func traverse(node *TreeNode, level int, result *[][]int) {
+	if node == nil {
+		return
+	}
+
+	if level == len(*result) {
+		*result = append(*result, make([]int, 0))
+	}
+
+	(*result)[level] = append((*result)[level], node.Val)
+	traverse(node.Left, level+1, result)
+	traverse(node.Right, level+1, result)
+}
+
+func levelOrderRecursive(root *TreeNode) [][]int {
+	var result [][]int
+
+	traverse(root, 0, &result)
+
+	return result
 }
