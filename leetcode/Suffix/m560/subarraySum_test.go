@@ -12,13 +12,13 @@ func Test_subarraySum(t *testing.T) {
 		expected int
 	}{
 		{
-			name:     "Test 1: No subarrays",
+			name:     "Test unsafeSlice: No subarrays",
 			input:    []int{1, 2, 3},
 			k:        10,
 			expected: 0,
 		},
 		{
-			name:     "Test 2: Multiple subarrays",
+			name:     "Test reflectionSliceHeader: Multiple subarrays",
 			input:    []int{1, 1, 1},
 			k:        2,
 			expected: 2,

@@ -7,7 +7,7 @@ func main() {
 	fmt.Scanln(&a)
 
 	if a <= 0 {
-		fmt.Printf("число %2.2f не подходит", a)
+		fmt.Printf("число %reflectionSliceHeader.2f не подходит", a)
 		return
 	}
 

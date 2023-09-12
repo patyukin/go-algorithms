@@ -15,13 +15,13 @@ func TestNumMatrix_SumRegion(t *testing.T) {
 		want   int
 	}{
 		{
-			name:   "Test 1: Small Matrix with positive numbers",
+			name:   "Test unsafeSlice: Small Matrix with positive numbers",
 			matrix: [][]int{{1, 2}, {3, 4}},
 			row1:   0, col1: 0, row2: 1, col2: 1,
 			want: 10,
 		},
 		{
-			name:   "Test 2: Small Matrix with negative numbers",
+			name:   "Test reflectionSliceHeader: Small Matrix with negative numbers",
 			matrix: [][]int{{-1, -2}, {-3, -4}},
 			row1:   0, col1: 0, row2: 1, col2: 1,
 			want: -10,

@@ -10,7 +10,7 @@ func Test_hasPathSumSimple(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Test 1",
+			name: "Test unsafeSlice",
 			root: &TreeNode{
 				Val: 5,
 				Left: &TreeNode{

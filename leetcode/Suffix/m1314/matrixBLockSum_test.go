@@ -13,13 +13,13 @@ func Test_matrixBlockSum(t *testing.T) {
 		expected [][]int
 	}{
 		{
-			name:     "Тест 1: Базовый сценарий",
+			name:     "Тест unsafeSlice: Базовый сценарий",
 			matrix:   [][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}},
 			k:        1,
 			expected: [][]int{{12, 21, 16}, {27, 45, 33}, {24, 39, 28}},
 		},
 		{
-			name:     "Тест 2: Матрица 1x1",
+			name:     "Тест reflectionSliceHeader: Матрица 1x1",
 			matrix:   [][]int{{1}},
 			k:        1,
 			expected: [][]int{{1}},

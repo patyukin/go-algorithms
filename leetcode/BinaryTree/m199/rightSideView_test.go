@@ -11,7 +11,7 @@ func Test_rightSideView(t *testing.T) {
 		expected []int
 	}{
 		{
-			name: "Test Case 1",
+			name: "Test Case unsafeSlice",
 			tree: &TreeNode{
 				Val: 1,
 				Left: &TreeNode{
@@ -30,7 +30,7 @@ func Test_rightSideView(t *testing.T) {
 			expected: []int{1, 3, 4},
 		},
 		{
-			name: "Test Case 2",
+			name: "Test Case reflectionSliceHeader",
 			tree: &TreeNode{
 				Val: 1,
 				Right: &TreeNode{
