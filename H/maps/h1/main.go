@@ -12,9 +12,10 @@ type SafeChannelMap struct {
 	operationType string
 	key           string
 	value         int
+	reader        chan int
 }
 
-func safeMapOperations(ch chan SafeChannelMap, mapValue chan int) {
+func safeMapOperations(ch chan SafeChannelMap) {
 	for {
 		select {
 		case msg := <-ch:
@@ -23,7 +24,7 @@ func safeMapOperations(ch chan SafeChannelMap, mapValue chan int) {
 			} else if msg.operationType == del {
 				delete(m, msg.key)
 			} else if msg.operationType == read {
-				mapValue <- m[msg.key]
+				msg.reader <- m[msg.key]
 			}
 		}
 	}
@@ -33,27 +34,37 @@ var m = make(map[string]int)
 
 func main() {
 	ch := make(chan SafeChannelMap)
-	mapValue := make(chan int)
-	go safeMapOperations(ch, mapValue)
+	go safeMapOperations(ch)
 
-	ch <- SafeChannelMap{
+	writer := SafeChannelMap{
 		operationType: write,
 		key:           "key",
-		value:         1,
+		value:         100,
 	}
 
-	ch <- SafeChannelMap{
+	reader := SafeChannelMap{
 		operationType: read,
 		key:           "key",
+		reader:        make(chan int),
 	}
 
-	fmt.Println(<-mapValue)
+	writer.value = 1000
+	ch <- writer
+	ch <- reader
+	fmt.Println(<-reader.reader)
+
+	writer.value = 1 << 12
+	ch <- writer
+	ch <- reader
+	fmt.Println(<-reader.reader)
 
 	ch <- SafeChannelMap{
 		operationType: del,
 		key:           "key",
 	}
 
+	ch <- reader
+	fmt.Println(<-reader.reader)
+
 	close(ch)
-	close(mapValue)
 }
