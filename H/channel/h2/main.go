@@ -2,10 +2,57 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	"time"
 )
 
+func splitFull() {
+	fmt.Println("split full")
+	ch1 := produce(2)
+	ch3 := produce(10)
+	ch := merge(ch1, ch3)
+	even, odd := split(ch)
+
+	even = pow2(even)
+	odd = pow2(odd)
+	<-consume(odd, even)
+}
+
+func fanOutFull() {
+	chs := fanOut(make(chan int), 3)
+
+	in := make(chan int)
+	go func() {
+		for i := 1; i <= 10; i++ {
+			in <- i
+		}
+		close(in)
+	}()
+
+	for _, ch := range chs {
+		go func(ch <-chan int) {
+			for v := range ch {
+				fmt.Println("Received:", v)
+			}
+		}(ch)
+	}
+
+	go func() {
+		for v := range in {
+			for _, ch := range chs {
+				ch <- v
+			}
+		}
+		// Закрыть все созданные каналы
+		for _, ch := range chs {
+			close(ch)
+		}
+	}()
+
+	time.Sleep(time.Second)
+}
+
 func pipeline() {
+	fmt.Println("pipeline")
 	ch1 := produce(2)
 	ch3 := produce(10)
 	ch := merge(ch1, ch3)
@@ -15,79 +62,8 @@ func pipeline() {
 	<-consume(ch)
 }
 
-func produce(x int) <-chan int {
-	ch := make(chan int)
-
-	go func() {
-		for i := x; i < x+2; i++ {
-			ch <- i
-		}
-		close(ch)
-	}()
-
-	return ch
-}
-
-func pow2(in <-chan int) <-chan int {
-	out := make(chan int)
-
-	go func() {
-		for v := range in {
-			out <- v * v
-		}
-		close(out)
-	}()
-
-	return out
-}
-
-func consume(ch <-chan int) chan struct{} {
-	res := make(chan struct{})
-
-	go func() {
-		for v := range ch {
-			fmt.Println(v)
-		}
-
-		close(res)
-	}()
-
-	return res
-}
-
-func splitEven(ch <-chan int) {
-
-}
-
-func fanOut(ch <-chan int) {
-
-}
-
-func merge(chs ...<-chan int) <-chan int {
-	out := make(chan int)
-
-	var wg sync.WaitGroup
-	for _, ch := range chs {
-
-		ch := ch
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for v := range ch {
-				out <- v
-			}
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
-}
-
 func main() {
-	fmt.Println("pipeline")
-	pipeline()
+	//splitFull()
+	//pipeline()
+	fanOutFull()
 }
