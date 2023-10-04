@@ -15,9 +15,11 @@ func main() {
 		close(producer)
 	}()
 
-	for {
-		producer <- rand.Intn(5) + 1
-		time.Sleep(time.Second)
-	}
+	go func() {
+		for {
+			producer <- rand.Intn(5) + 1
+			time.Sleep(time.Second)
+		}
+	}()
 
 }

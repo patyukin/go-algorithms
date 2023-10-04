@@ -24,40 +24,57 @@ type ReadyOrder struct {
 
 func waiter(ctx context.Context, order <-chan Order, cookChannel chan<- Cook, readyOrder chan ReadyOrder, wg *sync.WaitGroup, cancel context.CancelFunc) {
 	defer wg.Done()
-	defer close(cookChannel)
 	i := 1
-	readyOrderCount, orderCount := 1, 1
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("waiter was canceled.")
-			return
-		case ro, ok := <-readyOrder:
-			if !ok && readyOrderCount > 5 {
-				return
-			} else if !ok {
-				break
-			}
+	var owg sync.WaitGroup
 
-			fmt.Println("ready order =", ro, ", ok =", ok)
-			readyOrderCount++
-		case o, ok := <-order:
-			if !ok && orderCount > 5 {
+	owg.Add(1)
+	go func() {
+		defer owg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("waiter was canceled.")
 				return
-			} else if !ok {
-				break
-			}
+			case o, ok := <-readyOrder:
+				if !ok {
+					return
+				}
 
-			time.Sleep(1 * time.Second)
-			cookChannel <- Cook{ID: o.ID, orderID: i}
-			i++
-			orderCount++
-		case <-time.After(3 * time.Hour):
-			fmt.Println("Превышен лимит времени! Процесс заказа прерван.")
-			cancel()
-			return
+				fmt.Printf("ready order %v\n", o)
+			case <-time.After(3 * time.Hour):
+				fmt.Println("Превышен лимит времени! Процесс заказа прерван.")
+				cancel()
+				return
+			}
 		}
-	}
+	}()
+
+	owg.Add(1)
+	go func() {
+		defer owg.Done()
+		defer close(cookChannel)
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("waiter was canceled.")
+				return
+			case o, ok := <-order:
+				if !ok {
+					return
+				}
+
+				time.Sleep(1 * time.Second)
+				cookChannel <- Cook{ID: o.ID, orderID: i}
+				i++
+			case <-time.After(3 * time.Hour):
+				fmt.Println("Превышен лимит времени! Процесс заказа прерван.")
+				cancel()
+				return
+			}
+		}
+	}()
+
+	owg.Wait()
 }
 
 func chef(ctx context.Context, cookChannel <-chan Cook, readyOrder chan ReadyOrder, wg *sync.WaitGroup, cancel context.CancelFunc) {
@@ -89,7 +106,6 @@ func chef(ctx context.Context, cookChannel <-chan Cook, readyOrder chan ReadyOrd
 
 func client(ctx context.Context, order chan Order, wg *sync.WaitGroup, cancel context.CancelFunc) {
 	defer wg.Done()
-	defer close(order)
 	for i := 1; i <= 5; i++ {
 		select {
 		case <-ctx.Done():
@@ -102,6 +118,7 @@ func client(ctx context.Context, order chan Order, wg *sync.WaitGroup, cancel co
 			return
 		}
 	}
+	close(order)
 }
 
 func main() {
@@ -110,7 +127,7 @@ func main() {
 
 	order := make(chan Order)
 	cookChannel := make(chan Cook)
-	readyOrder := make(chan ReadyOrder, 5)
+	readyOrder := make(chan ReadyOrder)
 
 	var wg sync.WaitGroup
 

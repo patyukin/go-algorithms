@@ -15,14 +15,10 @@ type Order struct {
 func main() {
 	orders := make(chan Order)
 	readyOrders := make(chan int)
-	drivers := make(chan int, 3)
+	drivers := make(chan int)
 
-	var wgOrders sync.WaitGroup
-	var wgReadyOrders sync.WaitGroup
 	var wgDrivers sync.WaitGroup
 
-	wgOrders.Add(1)
-	wgReadyOrders.Add(1)
 	wgDrivers.Add(1)
 
 	go func() {
@@ -30,21 +26,21 @@ func main() {
 			o.confirm = true
 			readyOrders <- o.n
 		}
-		wgOrders.Done()
+		close(readyOrders)
 	}()
 
 	go func() {
 		for ro := range readyOrders {
 			drivers <- ro
 		}
-		wgReadyOrders.Done()
+		close(drivers)
 	}()
 
 	go func() {
 		for d := range drivers {
 			fmt.Println("Driver", d, "is processing an order")
 		}
-		wgDrivers.Done()
+		defer wgDrivers.Done()
 	}()
 
 	orders <- Order{n: 1, confirm: false, deliveryAddress: "ADDRESS 1"}
@@ -52,9 +48,5 @@ func main() {
 	orders <- Order{n: 3, confirm: false, deliveryAddress: "ADDRESS 3"}
 
 	close(orders)
-	wgOrders.Wait()
-	close(readyOrders)
-	wgReadyOrders.Wait()
-	close(drivers)
 	wgDrivers.Wait()
 }
