@@ -1,0 +1,36 @@
+// Дан массив чисел. Нужно найти в нём последовательный под-массив, который имеет наибольшую сумму элементов. Вернуть эту сумму.
+// Пример
+
+// Input: nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+// Output: 6
+// Explanation: sub-array = [4, -1, 2, 1],  sum = 6
+
+
+func getSum(nums int) int {
+    s := nums[0]
+
+    for i := 0; i < len(nums); i++ {
+        temp := nums[i]
+        for j := i+1; j < len(nums); j++ {
+            temp += nums[j]
+        }
+
+        if temp > s {
+            s = temp
+        }
+    }
+}
+
+
+
+func getSum2(nums int) int {
+    s := nums[0]
+    temp := nums[i]
+    for i := 0; i < len(nums); i++ {
+
+        if nums[i] > s {
+            s = nums[i]
+        }
+
+    }
+}
