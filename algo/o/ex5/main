@@ -1,0 +1,23 @@
+// Даны две строки, содержащие буквы английского алфавита и символ #,
+// соответствующий клавише backspace. Нужно сравнить две строки с учётом backspace и вернуть TRUE если они равны.
+// Пример
+
+// Input: s = "ab#c", t = "ad#c"
+// Output: true
+// Explanation: Both s and t become "ac"
+
+func check(s, t string) string {
+    for i := 1; i < len(s); i++ {
+        if s[i] == '#' {
+            s = s[:i-1] + s[i+1:]
+        }
+    }
+
+    for i := 1; i < len(t); i++ {
+        if t[i] == '#' {
+            t = t[:i-1] + t[i+1:]
+        }
+    }
+
+    return s == t
+}

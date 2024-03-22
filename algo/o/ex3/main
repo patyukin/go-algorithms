@@ -1,0 +1,27 @@
+// Есть конвеер по которому движутся кубики. На каждом кубике напечатан один символ. В процессе движения по конвееру
+// потерялся один кубик. Нужно определить, с каким символом он был, если известен входный и выходной набор символов на кубиках конвеера.
+// Пример
+
+// Input: bcaeda, aabcd
+// Output: e
+
+
+func find(long, short string) string {
+    m := make(map[rune]int)
+    for _, value := range long {
+        m[value]++
+    }
+
+    for _, value := range short {
+        m[value]--
+    }
+
+    for key, value := range m {
+        if m[value] != 0 {
+            return string(key)
+        }
+    }
+
+    return ""
+}
+
