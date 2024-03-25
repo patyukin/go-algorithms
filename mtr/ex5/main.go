@@ -1,12 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
+type ReadResult struct {
+	Error error
+	Bytes []byte
+}
+
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	currentDir, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Error getting current directory:", err)
@@ -16,74 +25,68 @@ func main() {
 	inputFilePath := filepath.Join(currentDir, "source-all.txt")
 	outputFilePath := filepath.Join(currentDir, "mtr/ex5", "dst-all.txt")
 
-	byteChannel := make(chan byte)
-	errorChannel := make(chan error)
-	doneChannel := make(chan struct{})
+	rChannel := readBytesFromFile(ctx, inputFilePath)
 
-	go func() {
-		readBytesFromFile(inputFilePath, byteChannel, errorChannel, doneChannel)
-	}()
-
-	go func() {
-		writeBytesToFile(outputFilePath, byteChannel, errorChannel, doneChannel)
-	}()
+	err = writeBytesToFile(ctx, outputFilePath, rChannel)
+	if err != nil {
+		cancel()
+	}
 
 	fmt.Printf("Input file: %s\nOutput file: %s\n", inputFilePath, outputFilePath)
 
-	for {
-		select {
-		case err = <-errorChannel:
+	// other ...
+}
+
+func readBytesFromFile(ctx context.Context, inputFilePath string) chan ReadResult {
+	ch := make(chan ReadResult)
+
+	go func() {
+		defer close(ch)
+		var n int
+		file, err := os.Open(inputFilePath)
+		if err != nil {
+			ch <- ReadResult{Error: err}
+			return
+		}
+
+		defer func(file *os.File) {
+			err = file.Close()
 			if err != nil {
-				fmt.Println("Error:", err)
+				fmt.Println("Error closing file:", err)
+			}
+		}(file)
+
+		buffer := make([]byte, 1)
+
+		for {
+			select {
+			case <-ctx.Done():
+				ch <- ReadResult{Error: ctx.Err()}
+				return
+			default:
+			}
+
+			n, err = file.Read(buffer)
+			if n == 0 {
+				break
+			}
+
+			if err != nil {
+				ch <- ReadResult{Error: err}
 				return
 			}
-		case <-doneChannel:
-			fmt.Println("File read and write complete")
-			return
+
+			ch <- ReadResult{Bytes: buffer}
 		}
-	}
+	}()
+
+	return ch
 }
 
-func readBytesFromFile(inputFilePath string, byteChannel chan<- byte, errorChannel chan<- error, doneChannel chan<- struct{}) {
-	var n int
-	file, err := os.Open(inputFilePath)
-	if err != nil {
-		errorChannel <- err
-		return
-	}
-
-	defer func(file *os.File) {
-		err = file.Close()
-		if err != nil {
-			fmt.Println("Error closing file:", err)
-		}
-	}(file)
-
-	buffer := make([]byte, 1)
-
-	for {
-		n, err = file.Read(buffer)
-		if n == 0 {
-			break
-		}
-
-		if err != nil {
-			errorChannel <- err
-			return
-		}
-
-		byteChannel <- buffer[0]
-	}
-
-	close(byteChannel)
-	doneChannel <- struct{}{}
-}
-
-func writeBytesToFile(outputFilePath string, byteChannel <-chan byte, errorChannel chan<- error, doneChannel chan<- struct{}) {
+func writeBytesToFile(ctx context.Context, outputFilePath string, rChannel <-chan ReadResult) error {
 	outputFile, err := os.Create(outputFilePath)
 	if err != nil {
-		errorChannel <- err
-		return
+		return err
 	}
 
 	defer func(outputFile *os.File) {
@@ -93,13 +96,22 @@ func writeBytesToFile(outputFilePath string, byteChannel <-chan byte, errorChann
 		}
 	}(outputFile)
 
-	for b := range byteChannel {
-		_, err = outputFile.Write([]byte{b})
+	for ch := range rChannel {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		if ch.Error != nil {
+			return err
+		}
+
+		_, err = outputFile.Write(ch.Bytes)
 		if err != nil {
-			errorChannel <- err
-			return
+			return err
 		}
 	}
 
-	doneChannel <- struct{}{}
+	return nil
 }
